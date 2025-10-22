@@ -8,6 +8,24 @@ This repository contains the homework solutions for **Numerical Mathematics II f
 
 - `homework#/` – Each contains homework solutions of homework #
 
+## How to convert .ipynb to .pdf
+
+```
+# install jupyter and pandoc
+brew install pandoc
+brew install --cask mactex
+
+curl -sL "https://yihui.org/tinytex/install-bin-unix.sh" | sh
+
+sudo /usr/local/bin/tlmgr path add
+xelatex --version
+tlmgr install collection-latexextra collection-fontsrecommended collection-latexrecommended
+```
+
+```
+jupyter nbconvert --to pdf [notebook].ipynb
+```
+
 ## How to Submit the homework
 
 Hand in the solution in one folder labeled hw1_group[group number] and containing:
