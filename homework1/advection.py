@@ -1,4 +1,6 @@
 """
+* Group 9
+* Griselda Lleshi, Hyejun Park, Jacqueline Mc Kenna Reardon
 advections.py
 - Contains full advection_template code unchanged
 - Runs tests for 1D linear advection using FTCS and Upwind schemes

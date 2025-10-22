@@ -1,4 +1,6 @@
 """
+* Group 9
+* Griselda Lleshi, Hyejun Park, Jacqueline Mc Kenna Reardon
 Poisson.py
 - Runs tests for const and sin problems, N=[20,40,80,...,1280]
 """
