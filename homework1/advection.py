@@ -1,4 +1,14 @@
 """
+advections.py
+- Contains full advection_template code unchanged
+- Runs tests for 1D linear advection using FTCS and Upwind schemes
+- Investigates CFL effects
+"""
+
+# ------------------------
+# Begin advection_template
+# ------------------------
+"""
 Numerical Mathematics for Engineers II WS 25/26
 Homework 01 Exercise 1.3
 1D Linear advection
@@ -11,6 +21,7 @@ import os
 
 # Define the test problem:
 # u_t + a u_x = 0
+# (d)
 def get_testproblem():
     testproblem = {}
 
@@ -72,7 +83,6 @@ def graph_solution(U, x, time, uexact, xL, xR, method, initialize, final_time):
 
     plt.figure(1)
     plt.plot(x[1:-1], U_comp, 'r.', markersize=4, label='computed solution')
-
     plt.plot(x[1:-1], U_true, 'k-', label='true solution')
     plt.title(method)
     plt.xlabel('x')
@@ -82,7 +92,6 @@ def graph_solution(U, x, time, uexact, xL, xR, method, initialize, final_time):
     if final_time == 1:
         plt.figure(2)
         plt.plot(x[1:-1], U_comp, 'r.', markersize=4, label='computed solution')
-
         plt.plot(x[1:-1], U_true, 'k-', label='true solution')
         plt.title(method)
         plt.xlabel('x')
@@ -97,25 +106,29 @@ def graph_solution(U, x, time, uexact, xL, xR, method, initialize, final_time):
     plt.clf()
 
 
-
 #### Question (a) 
 def compute_dt(CFL, a, dx):
-    ## TODO 
+    dt = CFL * dx / a
     return dt
-
 
 
 #### Question (b)
 #
 def update_ftcs(U, a, dt, dx):
-    ## TODO 
+    U_temp = U.copy()
+    U_temp[1:-1] = U[1:-1] - (a * dt / (2*dx)) * (U[2:] - U[:-2])
+    U[:] = U_temp
 
 def update_upwind(U, a, dt, dx):
-    ## TODO
+    U_temp = U.copy()
+    U_temp[1:-1] = U[1:-1] - (a * dt / dx) * (U[1:-1] - U[:-2])
+    U[:] = U_temp
     
 
+#### Question (c)
 def compute_error(x, time, uexact, U):
-    ## TODO
+    U_exact = uexact(x, time)
+    err_max = np.max(np.abs(U - U_exact))
     return err_max
 #
 #######
@@ -123,8 +136,7 @@ def compute_error(x, time, uexact, U):
 # Driver
 #
 # Output:
-# - errL1: error in L1 norm
-# - errLmax: error in maximum norm
+# - err_max: error in maximum norm
 def my_driver(method, testproblem, parameters, N):
 
     # Extract problem information
@@ -141,24 +153,13 @@ def my_driver(method, testproblem, parameters, N):
     plot_freq = parameters["plot_freq"]
 
     # Grid generation
-
-    # calculate dx: cell length in space
     dx = (xR - xL) / N
-
-    # create mesh with ghost cells
     x = np.linspace(xL - dx, xR, N + 2)
-
-    # Initialization
 
     # initialize U
     U = u0(x)
-
-    # start time marching
     time = t0
     done = 0
-
-    # do output
-    print('\n# START PROGRAM')
 
     # Plot initial data
     if plot_freq != 0:
@@ -167,37 +168,29 @@ def my_driver(method, testproblem, parameters, N):
     # Time stepping
     for j in range(1, max_steps + 1):
 
-        # set periodic boundary conditions
         U[0] = U[-2]
-        U[-1] = U[1]  
+        U[-1] = U[1]
 
-        # impose CFL condition to find dt
         dt = compute_dt(CFL, a, dx)
 
-        # check that time 'tend' has not been exceeded
         if (time + dt) > tend:
             dt = tend - time
             done = 1
         time = time + dt
 
-        # do output to screen if wished
         if (plot_freq != 0) and (j % plot_freq) == 0:
             print('Taking time step %i: \t update from %f \t to %f' % (j, time - dt, time))
 
-        # take a time step
         if method == 'FTCS':
             update_ftcs(U, a, dt, dx)
-
         elif method == 'upwind':
             update_upwind(U, a, dt, dx)
         else:
             raise ValueError('Stop in my_driver. No appropriate method chosen.')
 
-        # draw graph if wished
         if (plot_freq != 0) and (j % plot_freq) == 0:
             graph_solution(U, x, time, uexact, xL, xR, method, False, False)
 
-        # if we have done the calculation for tend, we can stop
         if done == 1:
             print('Have reached time tend; stop now')
             break
@@ -209,67 +202,50 @@ def my_driver(method, testproblem, parameters, N):
     if plot_freq != 0:
         graph_solution(U, x, time, uexact, xL, xR, method, False, True)
 
-    # Compute error
     U[-1] = U[1]
     err_max = compute_error(x[1:], time, uexact, U[1:])
-
     print('Error in maximum norm:\t %3.2e\n' % err_max)
 
     return err_max
 
-# Main file for solving
-# the linear advection equation u_t + a u_x = 0
-# using FD schemes:
-#   -- FTCS scheme
-#   -- upwind scheme
-# using periodic b.c.
+# ------------------------
+# End advection_template
+# ------------------------
 
 
+# ------------------------
+# Main: Run all tests
+# ------------------------
 def main():
     if not os.path.exists("results"):
         os.makedirs("results")
-    print("")
 
-    # Choose method:
-    #
-    # Options:
-    # 'FTCS'  : forward time central space
-    # 'upwind': upwind scheme 
-    method = 'upwind'
-
-    # read in test problem:
     testproblem = get_testproblem()
 
-    # read in problem parameters:
+    # 사용자에게 solver 선택
+    print("Choose scheme ('FTCS' or 'upwind'):")
+    scheme = input().strip()
+
     parameters = define_default_parameters()
 
-    # call driver
-    if parameters["Nrefine"] < 0:
-        raise Exception("Stop in main. Nrefine negative!")
+    # --- Part D: FTCS and Upwind comparison ---
+    print("=== FTCS Scheme ===")
+    parameters["Nrefine"] = 2  # N = 40, 80, 160
+    my_driver("FTCS", testproblem, parameters, parameters["N"])
 
-    errLmax_vec = np.zeros(parameters["Nrefine"] + 1)
-    N_vec = np.zeros(parameters["Nrefine"] + 1)
+    print("=== Upwind Scheme ===")
+    my_driver("upwind", testproblem, parameters, parameters["N"])
 
-    # call the driver routine for different grid sizes
-    N = parameters["N"]
-    for k in range(parameters["Nrefine"] + 1):
-        errLmax = my_driver(method, testproblem, parameters, N)
-
-        N_vec[k] = N
-        errLmax_vec[k] = errLmax
-
-        N = N * 2
-
-    # compute convergence rate
-    rateLmax = np.diff(np.log(errLmax_vec)) / np.diff(np.log(1. / N_vec))
-
-    # write results to file
-    with open("results/error.txt", "w") as f:
-        f.write('\nLmax error:\n')
-        f.write(f' {N_vec[0]} \t {errLmax_vec[0]:.3e} \t NaN\n')
-        for i in range(1, parameters["Nrefine"] + 1):
-            f.write(f'{N_vec[i]} \t {errLmax_vec[i]:.3e} \t {rateLmax[i - 1]:.2f} \n')
+    # --- Part E: CFL influence for Upwind ---
+    CFL_values = [0.8, 1.0, 1.2]
+    N = 40
+    for CFL in CFL_values:
+        print(f"\n--- Upwind Scheme with CFL = {CFL} ---")
+        parameters = define_default_parameters()
+        parameters["CFL"] = CFL
+        parameters["Nrefine"] = 0
+        my_driver("upwind", testproblem, parameters, N)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
